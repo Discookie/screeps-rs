@@ -3,7 +3,6 @@ use screeps::{
     prelude::*,
     objects::Creep
 };
-
 use crate::traits::{Role, Task};
 use crate::tasks::{
     harvest::TaskHarvest,
@@ -12,20 +11,20 @@ use crate::tasks::{
     upgrade::TaskUpgrade,
 };
 
-/// A harvester creep refills itself when empty, otherwise tries to do the following tasks in order:
-///   1. `tasks/refill`
-///   2. `tasks/build`
+/// A builder creep refills itself when empty, otherwise tries to do the following tasks in order:
+///   1. `tasks/build`
+///   2. `tasks/refill`
 ///   3. `tasks/upgrade`
-pub struct Harvester<'a> {
+pub struct Builder<'a> {
     harvest: &'a TaskHarvest,
     refill: &'a TaskRefill,
     build: &'a TaskBuild,
     upgrade: &'a TaskUpgrade
 }
 
-impl<'a> Harvester<'a> {
-    pub fn new(build: &'a TaskBuild, harvest: &'a TaskHarvest, refill: &'a TaskRefill, upgrade: &'a TaskUpgrade) -> Harvester<'a> {
-        Harvester{
+impl<'a> Builder<'a> {
+    pub fn new(build: &'a TaskBuild, harvest: &'a TaskHarvest, refill: &'a TaskRefill, upgrade: &'a TaskUpgrade) -> Builder<'a> {
+        Builder{
             harvest: harvest,
             refill: refill,
             build: build,
@@ -34,9 +33,9 @@ impl<'a> Harvester<'a> {
     }
 }
 
-impl<'a> Role for Harvester<'a> {
+impl<'a> Role for Builder<'a> {
     fn name(&self) -> &'static str {
-        "harvester"
+        "builder"
     }
 
     fn run(&self, creep: &Creep) -> Result<(), Box<Error>> {
@@ -53,8 +52,8 @@ impl<'a> Role for Harvester<'a> {
             Ok(())
         } else {
             match true {
-                _ if self.refill.run(creep)?  => Ok(()),
                 _ if self.build.run(creep)?   => Ok(()),
+                _ if self.refill.run(creep)?  => Ok(()),
                 _ if self.upgrade.run(creep)? => Ok(()),
 
                 _ => Err(Box::from("all of the tasks failed to run"))

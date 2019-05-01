@@ -1,4 +1,5 @@
 #![recursion_limit = "128"]
+#![feature(drain_filter)]
 extern crate fern;
 #[macro_use]
 extern crate log;
@@ -7,10 +8,10 @@ extern crate screeps;
 extern crate stdweb;
 
 mod logging;
-mod traits;
 mod roles;
+mod tasks;
+mod traits;
 
-use std::error::Error;
 use screeps::{
     prelude::*,
     objects::*,
@@ -20,8 +21,15 @@ use screeps::{
 use crate::{
     traits::Role,
     roles::{
+        builder::Builder,
         harvester::Harvester,
         upgrader::Upgrader
+    },
+    tasks::{
+        build::TaskBuild,
+        harvest::TaskHarvest,
+        refill::TaskRefill,
+        upgrade::TaskUpgrade
     }
 };
 
@@ -55,14 +63,21 @@ fn main() {
 }
 
 fn game_loop() {
-    let mut role_harvester = Harvester{};
-    let mut role_upgrader = Upgrader{};
+    let task_build = TaskBuild::new();
+    let task_harvest = TaskHarvest::new();
+    let task_refill = TaskRefill::new();
+    let task_upgrade = TaskUpgrade::new();
+
+    let role_builder = Builder::new(&task_build, &task_harvest, &task_refill, &task_upgrade);
+    let role_harvester = Harvester::new(&task_build, &task_harvest, &task_refill, &task_upgrade);
+    let role_upgrader = Upgrader::new(&task_harvest, &task_upgrade);
     let mut err_counter = 0;
 
     for creep in creeps::values() {
 
         match &creep.memory().string("role").unwrap_or( Some("error".to_string()) ).unwrap_or( "missing".to_string() )
         {
+            r if r == role_builder.name() => role_builder.run(&creep),
             r if r == role_harvester.name() => role_harvester.run(&creep),
             r if r == role_upgrader.name() => role_upgrader.run(&creep),
             role => Err(Box::from(format!("unknown role {}", role)))

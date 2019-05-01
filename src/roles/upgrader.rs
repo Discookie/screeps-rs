@@ -1,46 +1,55 @@
 use std::error::Error;
 use screeps::{
     prelude::*,
-    objects::{
-        Creep,
-        StructureController
-    },
-    constants::*,
-    game::spawns
+    objects::Creep
 };
-use crate::traits::Role;
 
-pub struct Upgrader;
+use crate::traits::{Role, Task};
+use crate::tasks::{
+    harvest::TaskHarvest,
+    upgrade::TaskUpgrade,
+};
 
-impl Role for Upgrader {
+/// An upgrader creep either:
+///   * Refills itself, or
+///   * Upgrades the controller
+pub struct Upgrader<'a> {
+    harvest: &'a TaskHarvest,
+    upgrade: &'a TaskUpgrade
+}
+
+impl<'a> Upgrader<'a> {
+    pub fn new(harvest: &'a TaskHarvest, upgrade: &'a TaskUpgrade) -> Upgrader<'a> {
+        Upgrader{
+            harvest: harvest,
+            upgrade: upgrade
+        }
+    }
+}
+
+impl<'a> Role for Upgrader<'a> {
     fn name(&self) -> &'static str {
         "upgrader"
     }
 
-    fn run(&mut self, creep: &Creep) -> Result<(), Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<(), Box<Error>> {
         let harvesting = match creep.energy() {
             0 => true,
             carry if carry >= creep.carry_capacity() => false,
             _ => creep.memory().bool("harvesting")
         };
 
-        if harvesting {
-            let sources = creep.room().find(find::SOURCES);
-            let target_src = sources.get(0).ok_or("there are no sources")?;
-
-            if creep.harvest(target_src) == ReturnCode::NotInRange {
-                creep.move_to(target_src);
-            }
-        } else {
-            let controller: StructureController = creep.room().controller().ok_or("there is no controller")?;
-
-            if creep.upgrade_controller(&controller) == ReturnCode::NotInRange {
-                creep.move_to(&controller);
-            }
-        }
-
         creep.memory().set("harvesting", harvesting);
 
-        Ok(())
+        if harvesting {
+            self.harvest.run(creep)?;
+            Ok(())
+        } else {
+            match true {
+                _ if self.upgrade.run(creep)? => Ok(()),
+
+                _ => Err(Box::from("all of the tasks failed to run"))
+            }
+        }
     }
 }
