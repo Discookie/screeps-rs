@@ -3,18 +3,18 @@ use screeps::{
     prelude::*,
     objects::{
         Creep,
-        StructureSpawn
+        StructureController
     },
     constants::*,
     game::spawns
 };
 use crate::traits::Role;
 
-pub struct Harvester;
+pub struct Upgrader;
 
-impl Role for Harvester {
+impl Role for Upgrader {
     fn name(&self) -> &'static str {
-        "harvester"
+        "upgrader"
     }
 
     fn run(&mut self, creep: &Creep) -> Result<(), Box<Error>> {
@@ -32,10 +32,10 @@ impl Role for Harvester {
                 creep.move_to(target_src);
             }
         } else {
-            let spawn: StructureSpawn = spawns::get("Spawn1").ok_or("spawn does not exist")?;
+            let controller: StructureController = creep.room().controller().ok_or("there is no controller")?;
 
-            if creep.transfer_all(&spawn, ResourceType::Energy) == ReturnCode::NotInRange {
-                creep.move_to(&spawn);
+            if creep.upgrade_controller(&controller) == ReturnCode::NotInRange {
+                creep.move_to(&controller);
             }
         }
 

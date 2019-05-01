@@ -10,6 +10,7 @@ mod logging;
 mod traits;
 mod roles;
 
+use std::error::Error;
 use screeps::{
     prelude::*,
     objects::*,
@@ -18,7 +19,10 @@ use screeps::{
 
 use crate::{
     traits::Role,
-    roles::harvester::Harvester
+    roles::{
+        harvester::Harvester,
+        upgrader::Upgrader
+    }
 };
 
 fn main() {
@@ -51,11 +55,18 @@ fn main() {
 }
 
 fn game_loop() {
-    let mut harv = Harvester{};
+    let mut role_harvester = Harvester{};
+    let mut role_upgrader = Upgrader{};
     let mut err_counter = 0;
 
     for creep in creeps::values() {
-        harv.run(&creep).unwrap_or_else(|err| {
+
+        match &creep.memory().string("role").unwrap_or( Some("error".to_string()) ).unwrap_or( "missing".to_string() )
+        {
+            r if r == role_harvester.name() => role_harvester.run(&creep),
+            r if r == role_upgrader.name() => role_upgrader.run(&creep),
+            role => Err(Box::from(format!("unknown role {}", role)))
+        }.unwrap_or_else(|err| {
             warn!("failed to execute task for creep {}: {}", creep.name(), err.to_string());
             err_counter += 1;
         });
