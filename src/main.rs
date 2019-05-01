@@ -7,10 +7,19 @@ extern crate screeps;
 extern crate stdweb;
 
 mod logging;
+mod traits;
+mod roles;
 
-use std::collections::HashSet;
+use screeps::{
+    prelude::*,
+    objects::*,
+    game::*
+};
 
-use screeps::{find, prelude::*, Part, ReturnCode, RoomObjectProperties};
+use crate::{
+    traits::Role,
+    roles::harvester::Harvester
+};
 
 fn main() {
     stdweb::initialize();
@@ -42,5 +51,18 @@ fn main() {
 }
 
 fn game_loop() {
-    
+    let mut harv = Harvester{};
+    let mut err_counter = 0;
+
+    for creep in creeps::values() {
+        harv.run(&creep).unwrap_or_else(|err| {
+            warn!("failed to execute task for creep {}: {}", creep.name(), err.to_string());
+            err_counter += 1;
+        });
+    }
+
+    if err_counter > 10 {
+        error!("too many errors, sending notification");
+        notify("Encountered too many errors!", None);
+    }
 }
