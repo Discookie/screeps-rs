@@ -1,7 +1,9 @@
 use std::error::Error;
 use screeps::{
     prelude::*,
-    objects::Creep
+    objects::Creep,
+    memory::MemoryReference,
+    constants::Part
 };
 use crate::traits::{Role, Task};
 use crate::tasks::{
@@ -16,6 +18,7 @@ use crate::tasks::{
 ///   2. `tasks/refill`
 ///   3. `tasks/upgrade`
 pub struct Builder<'a> {
+    memory: MemoryReference,
     harvest: &'a TaskHarvest,
     refill: &'a TaskRefill,
     build: &'a TaskBuild,
@@ -23,8 +26,11 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(build: &'a TaskBuild, harvest: &'a TaskHarvest, refill: &'a TaskRefill, upgrade: &'a TaskUpgrade) -> Builder<'a> {
+    pub fn new(memory: MemoryReference, build: &'a TaskBuild, harvest: &'a TaskHarvest, refill: &'a TaskRefill, upgrade: &'a TaskUpgrade) -> Builder<'a> {
+        memory.set("run_count", 0);
+        
         Builder{
+            memory: memory,
             harvest: harvest,
             refill: refill,
             build: build,
@@ -38,7 +44,21 @@ impl<'a> Role for Builder<'a> {
         "builder"
     }
 
+    fn limit(&self) -> i32 {
+        2
+    }
+
+    fn next_creep(&self) -> Vec<Part> {
+        vec![Part::Work, Part::Carry, Part::Move]
+    }
+
+    fn run_count(&self) -> i32 {
+        self.memory.get("run_count").unwrap_or(0)
+    }
+
     fn run(&self, creep: &Creep) -> Result<(), Box<Error>> {
+        self.memory.set("run_count", self.run_count() + 1);
+
         let harvesting = match creep.energy() {
             0 => true,
             carry if carry >= creep.carry_capacity() => false,

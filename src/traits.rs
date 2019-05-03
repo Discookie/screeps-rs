@@ -1,4 +1,7 @@
-use screeps::objects::Creep;
+use screeps::{
+    objects::Creep,
+    constants::Part
+};
 use std::error::Error;
 
 /// Represents a creep's role.
@@ -8,6 +11,12 @@ pub trait Role {
     fn name(&self) -> &'static str {
         "undefined"
     }
+
+    fn limit(&self) -> i32;
+
+    fn next_creep(&self) -> Vec<Part>;
+
+    fn run_count(&self) -> i32;
 
     fn run(&self, creep: &Creep) -> Result<(), Box<Error>>;
 }
