@@ -1,5 +1,8 @@
 use screeps::{
-    memory::MemoryReference,
+    memory::{
+        MemoryReference,
+        root
+    },
     objects::Creep,
     constants::Part
 };
@@ -32,10 +35,16 @@ pub trait Task {
         "undefined"
     }
 
-    fn memory(&self, creep: &Creep) -> Result<MemoryReference, Box<Error>> {
+    fn creep_memory(&self, creep: &Creep) -> Result<MemoryReference, Box<Error>> {
         creep.memory()
              .dict_or_create("tasks")
              .and_then(|mem| mem.dict_or_create(self.name()))
-          .or(Err(Box::from("error accessing memory")))
+          .or(Err(Box::from("error accessing creep memory")))
+    }
+
+    fn memory(&self) -> Result<MemoryReference, Box<Error>> {
+        root().dict_or_create("tasks")
+             .and_then(|mem| mem.dict_or_create(self.name()))
+          .or(Err(Box::from("error accessing global memory")))
     }
 }
