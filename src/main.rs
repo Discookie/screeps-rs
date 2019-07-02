@@ -14,6 +14,10 @@ mod tasks;
 mod traits;
 
 use screeps::{
+    constants::{
+        ReturnCode,
+        Part
+    },
     prelude::*,
     objects::*,
     game::*,
@@ -122,38 +126,42 @@ fn game_loop() {
             root().set("id", next_id()+1);
         }
 
-        fn make_mem(role: &str) -> MemoryReference {
+        fn make_mem(role: &str, id: i32) -> MemoryReference {
             let reference = MemoryReference::new();
             reference.set("role", role);
+            reference.set("id", id);
             reference
+        }
+
+        fn spawn_creep(spawn: &StructureSpawn, body: &Vec<Part>, id: &i32, options: &SpawnOptions) {
+            if spawn.spawn_creep_with_options(body.as_slice(), &id.to_string(), options) == ReturnCode::Ok {
+                step_id();
+            }
         }
         
         if role_harvester.run_count() < role_harvester.limit() {
-            if spawn.spawn_creep_with_options(
-                role_harvester.next_creep().as_slice(),
-                &next_id().to_string(),
-                &SpawnOptions::new().memory( make_mem(role_harvester.name()) )
-            ).as_result().is_ok() {
-                step_id();
-            }
+            let body = role_harvester.next_creep();
+            let id = next_id();
+            let options = SpawnOptions::new()
+                            .memory( make_mem(role_harvester.name(), id) );
+
+            spawn_creep(&spawn, &body, &id, &options);
         } 
         if role_upgrader.run_count() < role_upgrader.limit() {
-            if spawn.spawn_creep_with_options(
-                role_upgrader.next_creep().as_slice(),
-                &next_id().to_string(),
-                &SpawnOptions::new().memory( make_mem(role_upgrader.name()) )
-            ).as_result().is_ok() {
-                step_id();
-            }
+            let body = role_upgrader.next_creep();
+            let id = next_id();
+            let options = SpawnOptions::new()
+                            .memory( make_mem(role_upgrader.name(), id) );
+
+            spawn_creep(&spawn, &body, &id, &options);
         }
         if role_builder.run_count() < role_builder.limit() {
-            if spawn.spawn_creep_with_options(
-                role_builder.next_creep().as_slice(),
-                &next_id().to_string(),
-                &SpawnOptions::new().memory( make_mem(role_builder.name()) )
-            ).as_result().is_ok() {
-                step_id();
-            }
+            let body = role_builder.next_creep();
+            let id = next_id();
+            let options = SpawnOptions::new()
+                            .memory( make_mem(role_builder.name(), id) );
+
+            spawn_creep(&spawn, &body, &id, &options);
         }
       }
     }
