@@ -1,4 +1,5 @@
 use screeps::{
+    memory::MemoryReference,
     objects::Creep,
     constants::Part
 };
@@ -26,4 +27,15 @@ pub trait Role {
 pub trait Task {
     /// Returns true if the task was executed.
     fn run(&self, creep: &Creep) -> Result<bool, Box<Error>>;
+
+    fn name(&self) -> &'static str {
+        "undefined"
+    }
+
+    fn memory(&self, creep: &Creep) -> Result<MemoryReference, Box<Error>> {
+        creep.memory()
+             .dict_or_create("tasks")
+             .and_then(|mem| mem.dict_or_create(self.name()))
+          .or(Err(Box::from("error accessing memory")))
+    }
 }
