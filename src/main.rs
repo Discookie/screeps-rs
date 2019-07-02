@@ -116,7 +116,7 @@ fn game_loop() {
 
     // New creep creation
     if let Some(spawn) = spawns::get("Spawn1") {
-      if !spawn.is_spawning() {
+        let mut spawning = spawn.is_spawning();
         fn next_id() -> i32 {
             let id = root().i32("id").unwrap_or(None).unwrap_or(0);
             id
@@ -133,37 +133,39 @@ fn game_loop() {
             reference
         }
 
-        fn spawn_creep(spawn: &StructureSpawn, body: &Vec<Part>, id: &i32, options: &SpawnOptions) {
+        fn spawn_creep(spawn: &StructureSpawn, body: &Vec<Part>, id: &i32, options: &SpawnOptions) -> bool {
             if spawn.spawn_creep_with_options(body.as_slice(), &id.to_string(), options) == ReturnCode::Ok {
                 step_id();
+                true
+            } else {
+                false
             }
         }
         
-        if role_harvester.run_count() < role_harvester.limit() {
+        if !spawning && role_harvester.run_count() < role_harvester.limit() {
             let body = role_harvester.next_creep();
             let id = next_id();
             let options = SpawnOptions::new()
                             .memory( make_mem(role_harvester.name(), id) );
 
-            spawn_creep(&spawn, &body, &id, &options);
+            spawning = spawn_creep(&spawn, &body, &id, &options);
         } 
-        if role_upgrader.run_count() < role_upgrader.limit() {
+        if !spawning && role_upgrader.run_count() < role_upgrader.limit() {
             let body = role_upgrader.next_creep();
             let id = next_id();
             let options = SpawnOptions::new()
                             .memory( make_mem(role_upgrader.name(), id) );
 
-            spawn_creep(&spawn, &body, &id, &options);
+            spawning = spawn_creep(&spawn, &body, &id, &options);
         }
-        if role_builder.run_count() < role_builder.limit() {
+        if !spawning && role_builder.run_count() < role_builder.limit() {
             let body = role_builder.next_creep();
             let id = next_id();
             let options = SpawnOptions::new()
                             .memory( make_mem(role_builder.name(), id) );
 
-            spawn_creep(&spawn, &body, &id, &options);
+            spawning = spawn_creep(&spawn, &body, &id, &options);
         }
-      }
     }
 
     if time() % 50 == 3 {
