@@ -36,4 +36,8 @@ impl Task for TaskRefill {
             Ok(false)
         }
     }
+
+    fn name(&self) -> &'static str {
+        "refill"
+    }
 }

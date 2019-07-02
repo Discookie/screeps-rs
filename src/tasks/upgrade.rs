@@ -29,4 +29,8 @@ impl Task for TaskUpgrade {
 
         Ok(true)
     }
+
+    fn name(&self) -> &'static str {
+        "upgrade"
+    }
 }

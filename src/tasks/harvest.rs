@@ -32,4 +32,8 @@ impl Task for TaskHarvest {
             Ok(false)
         }
     }
+
+    fn name(&self) -> &'static str {
+        "harvest"
+    }
 }

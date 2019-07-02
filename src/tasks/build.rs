@@ -30,4 +30,8 @@ impl Task for TaskBuild {
 
         Ok(true)
     }
+
+    fn name(&self) -> &'static str {
+        "build"
+    }
 }
