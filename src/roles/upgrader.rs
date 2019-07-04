@@ -72,4 +72,8 @@ impl<'a> Role for Upgrader<'a> {
             }
         }
     }
+
+    fn spawn_priority(&self) -> i32 {
+        15
+    }
 }

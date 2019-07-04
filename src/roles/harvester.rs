@@ -81,4 +81,8 @@ impl<'a> Role for Harvester<'a> {
             }
         }
     }
+
+    fn spawn_priority(&self) -> i32 {
+        10
+    }
 }

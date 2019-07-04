@@ -18,11 +18,16 @@ pub trait Role {
 
     fn limit(&self) -> i32;
 
+    /// The part layout of the next creep to spawn
     fn next_creep(&self) -> Vec<Part>;
 
     fn run_count(&self) -> i32;
 
     fn run(&self, creep: &Creep) -> Result<(), Box<Error>>;
+
+    /// The lower this number, the more creeps there will be overall
+    /// Default range: 10-100
+    fn spawn_priority(&self) -> i32;
 }
 
 /// Represents a creep's task.

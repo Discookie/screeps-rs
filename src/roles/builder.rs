@@ -80,4 +80,8 @@ impl<'a> Role for Builder<'a> {
             }
         }
     }
+
+    fn spawn_priority(&self) -> i32 {
+        15
+    }
 }

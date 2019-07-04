@@ -17,10 +17,7 @@ mod traits;
 use hashbrown::HashMap;
 
 use screeps::{
-    constants::{
-        ReturnCode,
-        Part
-    },
+    constants::ReturnCode,
     prelude::*,
     objects::*,
     game::*,
@@ -143,23 +140,29 @@ fn game_loop() {
             reference
         }
 
-        fn spawn_creep(spawn: &StructureSpawn, body: &Vec<Part>, id: &i32, options: &SpawnOptions) -> bool {
-            if spawn.spawn_creep_with_options(body.as_slice(), &id.to_string(), options) == ReturnCode::Ok {
-                step_id();
-                true
-            } else {
-                false
-            }
-        }
-
         if !spawn.is_spawning() {
-            for (role_str, role) in roles.iter() {
+            let mut priorities: Vec<(&Box<dyn Role>, i32)> = roles.iter().filter_map(
+             |(_, role)| {
+                if role.run_count() < role.limit() {
+                    Some((
+                        role,
+                        (role.run_count() + 1) * role.spawn_priority()
+                    ))
+                } else {
+                    None
+                }
+            }).collect();
+
+            priorities.sort_by(|(_, a), (_, b)| a.cmp(b));
+
+            for (role, _prio) in priorities {
                 let body = role.next_creep();
                 let id = next_id();
                 let options = SpawnOptions::new()
                                 .memory( make_mem(role.name(), id) );
 
-                if spawn_creep(&spawn, &body, &id, &options) {
+                if spawn.spawn_creep_with_options(body.as_slice(), &id.to_string(), &options) == ReturnCode::Ok {
+                    step_id();
                     break;
                 }
             }
