@@ -4,9 +4,10 @@ version = "0.1.0"
 authors = []
 
 [dependencies]
-stdweb = "0.4"
-log = "0.4"
 fern = "0.5"
+hashbrown = "0.5"
+log = "0.4"
+stdweb = "0.4"
 screeps-game-api = { version = "0.4", path = "../screeps-api/screeps-game-api" }
 
 [profile.release]
