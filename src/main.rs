@@ -1,5 +1,6 @@
 #![recursion_limit = "128"]
 #![feature(drain_filter)]
+#![allow(unused_imports)]
 extern crate fern;
 extern crate hashbrown;
 #[macro_use]
