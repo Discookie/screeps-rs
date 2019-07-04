@@ -56,7 +56,7 @@ impl<'a> Role for Builder<'a> {
         self.memory.get("run_count").unwrap_or(0)
     }
 
-    fn run(&self, creep: &Creep) -> Result<(), Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<(), Box<dyn Error>> {
         self.memory.set("run_count", self.run_count() + 1);
 
         let harvesting = match creep.energy() {

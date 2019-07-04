@@ -72,7 +72,7 @@ impl TaskHarvest {
 }
 
 impl Task for TaskHarvest {
-    fn run(&self, creep: &Creep) -> Result<bool, Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
         let memory = self.creep_memory(creep)?;
 
         let mut source_opt = { // reading stored target from memory
@@ -134,7 +134,7 @@ impl Task for TaskHarvest {
         "harvest"
     }
 
-    fn memory(&self) -> Result<MemoryReference, Box<Error>> {
+    fn memory(&self) -> Result<MemoryReference, Box<dyn Error>> {
         Ok(self.memory.clone())
     }
 }

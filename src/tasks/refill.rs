@@ -17,7 +17,7 @@ impl TaskRefill {
 }
 
 impl Task for TaskRefill {
-    fn run(&self, creep: &Creep) -> Result<bool, Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
         let mut targets = creep.room().find(find::STRUCTURES);
         let mut filt = targets.drain_filter(|structure| {
             match structure.as_can_store_energy() {

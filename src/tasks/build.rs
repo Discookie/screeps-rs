@@ -17,7 +17,7 @@ impl TaskBuild {
 }
 
 impl Task for TaskBuild {
-    fn run(&self, creep: &Creep) -> Result<bool, Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
         let sites = creep.room().find(find::CONSTRUCTION_SITES);
         let target_site = match sites.get(0) {
             Some(s) => s,

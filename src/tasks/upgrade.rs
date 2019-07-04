@@ -20,7 +20,7 @@ impl TaskUpgrade {
 }
 
 impl Task for TaskUpgrade {
-    fn run(&self, creep: &Creep) -> Result<bool, Box<Error>> {
+    fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
         let controller: StructureController = creep.room().controller().ok_or("there is no controller")?;
 
         if creep.upgrade_controller(&controller) == ReturnCode::NotInRange {

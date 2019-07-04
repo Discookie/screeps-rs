@@ -23,7 +23,7 @@ pub trait Role {
 
     fn run_count(&self) -> i32;
 
-    fn run(&self, creep: &Creep) -> Result<(), Box<Error>>;
+    fn run(&self, creep: &Creep) -> Result<(), Box<dyn Error>>;
 
     /// The lower this number, the more creeps there will be overall
     /// Default range: 10-100
@@ -34,20 +34,20 @@ pub trait Role {
 /// A creep should only execute one task per tick.
 pub trait Task {
     /// Returns true if the task was executed.
-    fn run(&self, creep: &Creep) -> Result<bool, Box<Error>>;
+    fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>>;
 
     fn name(&self) -> &'static str {
         "undefined"
     }
 
-    fn creep_memory(&self, creep: &Creep) -> Result<MemoryReference, Box<Error>> {
+    fn creep_memory(&self, creep: &Creep) -> Result<MemoryReference, Box<dyn Error>> {
         creep.memory()
              .dict_or_create("tasks")
              .and_then(|mem| mem.dict_or_create(self.name()))
           .or(Err(Box::from("error accessing creep memory")))
     }
 
-    fn memory(&self) -> Result<MemoryReference, Box<Error>> {
+    fn memory(&self) -> Result<MemoryReference, Box<dyn Error>> {
         root().dict_or_create("tasks")
              .and_then(|mem| mem.dict_or_create(self.name()))
           .or(Err(Box::from("error accessing global memory")))

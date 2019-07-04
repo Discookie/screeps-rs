@@ -54,7 +54,7 @@ impl Tower {
         None
     }
 
-    pub fn run(&self) -> Result<(), Box<Error>> {
+    pub fn run(&self) -> Result<(), Box<dyn Error>> {
         let tower_list = self.memory.dict_or_create("towers").map_err(|x| x.to_string())?;
 
         for tower_id in tower_list.keys() {
@@ -70,7 +70,7 @@ impl Tower {
         Ok(())
     }
 
-    pub fn run_tower(&self, tower: &StructureTower, memory: &MemoryReference) -> Result<(), Box<Error>> {
+    pub fn run_tower(&self, tower: &StructureTower, memory: &MemoryReference) -> Result<(), Box<dyn Error>> {
         if let Some(target) = self.get_target(&memory).or_else(|| self.new_target(&tower)) {
             memory.set("target", target.id());
             tower.attack(&target);
