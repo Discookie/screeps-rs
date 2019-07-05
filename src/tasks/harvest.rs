@@ -20,6 +20,16 @@ use screeps::{
 use crate::traits::Task;
 
 /// A creep moves to its assigned source, and begins harvesting.
+/// 
+/// Sources are stored in `memory.sources`.  
+/// What's stored inside a source:
+///   * `creep_limit` - how many creeps can harvest at the same time
+///   * `counter` - how many creeps harvested in this tick
+///   * `prev_counter` - how many creeps harvested in the previous tick
+///   * `pos` - an {x, y, room} object that stores the source's position
+///     * Populates when the first creep begins harvesting there.
+/// 
+/// A source cannot be removed, but its limit can be set to 0.
 pub struct TaskHarvest {
     memory: MemoryReference
 }
@@ -71,7 +81,7 @@ impl TaskHarvest {
     #[inline]
     fn get_limit(&self, id: &str) -> i32 {
         if let Ok(source) = self.memory.dict_or_create("sources").and_then(|src| src.dict_or_create(id)) {
-            source.i32("creep_limits").unwrap_or(None).unwrap_or(4)
+            source.i32("creep_limit").unwrap_or(None).unwrap_or(4)
         } else {
             4
         }
