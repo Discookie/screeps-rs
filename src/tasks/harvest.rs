@@ -1,4 +1,7 @@
-use std::error::Error;
+use std::{
+    convert::From,
+    error::Error
+};
 use screeps::{
     constants::*,
     game::get_object_typed,
@@ -8,6 +11,7 @@ use screeps::{
     },
     objects::{
         Creep,
+        RoomPosition,
         Source
     },
     prelude::*
@@ -29,101 +33,144 @@ impl TaskHarvest {
         let task = TaskHarvest{memory};
 
         // Copy last tick's counter
-        task.memory.del("prev_counter");
+        // 
+        let sources = task.memory.dict_or_create("sources").expect("failed to create task memory");
 
-        let counter = task.memory.dict_or_create("counter").expect("failed to create task memory");
-        let prev_counter = task.memory.dict_or_create("prev_counter").expect("failed to create task memory");
-
-        for key in counter.keys() {
-            prev_counter.set(&key, counter.i32(&key).unwrap_or(None).unwrap_or(0));
-            counter.set(&key, 0);
+        for source_id in sources.keys() {
+            let source = sources.dict(&source_id).unwrap().unwrap();
+            source.set("prev_counter", source.i32("counter").unwrap_or(None).unwrap_or(0));
+            source.set("counter", 0);
         }
 
         task
     }
 
+    #[inline]
     fn add_to_counter(&self, id: &str) {
-        if let Ok(counter) = self.memory.dict_or_create("counter") {
-            counter.set(id, 1 + counter.i32(id).unwrap_or(None).unwrap_or(0));
+        if let Ok(source) = self.memory.dict_or_create("sources").and_then(|src| src.dict_or_create(id)) {
+            source.set("counter", 1 + source.i32("counter").unwrap_or(None).unwrap_or(0));
         }
     }
 
+    #[inline]
     fn add_to_prev_counter(&self, id: &str) {
-        if let Ok(counter) = self.memory.dict_or_create("prev_counter") {
-            counter.set(id, 1 + counter.i32(id).unwrap_or(None).unwrap_or(0));
+        if let Ok(source) = self.memory.dict_or_create("sources").and_then(|src| src.dict_or_create(id)) {
+            source.set("prev_counter", 1 + source.i32("prev_counter").unwrap_or(None).unwrap_or(0));
         }
     }
 
+    #[inline]
     fn get_counter(&self, id: &str) -> i32 {
-        if let Ok(counter) = self.memory.dict_or_create("prev_counter") {
-            counter.i32(id).unwrap_or(None).unwrap_or(0)
+        if let Ok(source) = self.memory.dict_or_create("sources").and_then(|src| src.dict_or_create(id)) {
+            source.i32("prev_counter").unwrap_or(None).unwrap_or(0)
         } else {
             0
         }
     }
 
+    #[inline]
     fn get_limit(&self, id: &str) -> i32 {
-        if let Ok(counter) = self.memory.dict_or_create("creep_limits") {
-            counter.i32(id).unwrap_or(None).unwrap_or(4)
+        if let Ok(source) = self.memory.dict_or_create("sources").and_then(|src| src.dict_or_create(id)) {
+            source.i32("creep_limits").unwrap_or(None).unwrap_or(4)
         } else {
             4
         }
     }
+
+
 }
 
 impl Task for TaskHarvest {
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
         let memory = self.creep_memory(creep)?;
+        let sources = self.memory.dict_or_create("sources")?;
 
         let mut source_opt = { // reading stored target from memory
             match memory.string("source") {
-                Ok(Some(id)) =>
-                    get_object_typed::<Source>(&id)
-                        .unwrap_or(None)
-                        .and_then(|source| {
-                            match source.energy() {
-                                0 => None,
-                                _ => {
-                                    Some(source)
-                                }
-                            }
-                        }),
-
+                Ok(Some(id)) => match get_object_typed::<Source>(&id) {
+                    Ok(Some(ref source)) if source.energy() == 0 => None,
+                    _ => Some(id)
+                },
                 _ => None
             }
         };
 
         source_opt = match source_opt {
             None => { // selecting a new target
-                let mut sources = creep.room().find(find::SOURCES);
-                sources.retain(|source| {
-                    source.energy() > 0
-                     && self.get_counter(&source.id()) < self.get_limit(&source.id())
+                let mut source_ids = sources.keys();
+                source_ids.retain(|source_id| {
+                    (match get_object_typed::<Source>(&source_id) {
+                        Ok(Some(ref source)) if source.energy() == 0 => false,
+                        _ => true
+                    }) && self.get_counter(&source_id) < self.get_limit(&source_id)
                 });
 
-                match sources.len() {
+                match source_ids.len() {
                     0 => None,
                     len => {
-                        let source = {
+                        let source_id = {
                             let id = creep.memory().i32("id").unwrap_or(None).unwrap_or(0) as usize;
-                            sources[id % len].to_owned()
+                            source_ids[id % len].to_owned()
                         };
 
-                        memory.set("source", source.id());
-                        self.add_to_prev_counter(&source.id());
+                        memory.set("source", &source_id);
+                        self.add_to_prev_counter(&source_id);
 
-                        Some(source)
+                        Some(source_id)
                     }
                 }
             },
             x => x
         };
         
-        if let Some(source) = source_opt {
-            self.add_to_counter(&source.id());
-            if creep.harvest(&source) == ReturnCode::NotInRange {
-                creep.move_to(&source);
+        if let Some(source_id) = source_opt {
+            self.add_to_counter(&source_id);
+            memory.set("source", &source_id);
+
+            if let Some(pos) = 
+                sources.dict_or_create(&source_id)?.dict_or_create("pos").ok()
+                .and_then(|pos_root| {
+                    let x = pos_root.get("x").ok()?;
+                    let y = pos_root.get("y").ok()?;
+                    let room: String = pos_root.get("room").ok()?;
+
+                    Some(RoomPosition::new(x, y, &room))
+                }) 
+            { // we have a stored position
+                if creep.pos().is_near_to(&pos) {
+                    match get_object_typed::<Source>(&source_id)? {
+                        Some(source) => {
+                            creep.harvest(&source);
+                        },
+                        None => {
+                            warn!("Invalid source: {} - bad pos, in a different room", source_id);
+                        }
+                    }
+                } else {
+                    creep.move_to(&pos);
+                }
+            } else { // we do not have a stored position
+                match get_object_typed::<Source>(&source_id)? {
+                    Some(source) => {
+                        if creep.pos().is_near_to(&source) {
+                            creep.harvest(&source);
+                        } else {
+                            creep.move_to(&source);
+                        }
+                        
+                        // write the position
+                        let source_pos = source.pos();
+                        let pos_root = sources.dict_or_create(&source_id)?.dict_or_create("pos")?;
+                        pos_root.set("x", source_pos.x());
+                        pos_root.set("y", source_pos.y());
+                        pos_root.set("room", source_pos.room_name());
+                    },
+                    None => {
+                        warn!("Invalid source: {} - missing pos", source_id);
+                    }
+                }
             }
+
             Ok(true)
         } else {
             Ok(false)
