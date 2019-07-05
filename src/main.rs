@@ -10,8 +10,11 @@ extern crate screeps;
 extern crate stdweb;
 
 mod logging;
+/// All military, such as fleet management or towers.
 mod military;
+/// A role a creep can have.
 mod roles;
+/// An action a creep can execute.
 mod tasks;
 mod traits;
 
