@@ -6,7 +6,7 @@ use screeps::{
     constants::Part
 };
 
-use crate::traits::{Role, Task};
+use crate::traits::{Role, Task, FlagProcessor};
 use crate::tasks::{
     harvest::TaskHarvest,
     upgrade::TaskUpgrade,
@@ -32,6 +32,8 @@ impl<'a> Upgrader<'a> {
         }
     }
 }
+
+impl<'a> FlagProcessor for Upgrader<'a> {}
 
 impl<'a> Role for Upgrader<'a> {
     fn name(&self) -> &'static str {

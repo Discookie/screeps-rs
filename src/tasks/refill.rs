@@ -5,7 +5,10 @@ use screeps::{
     constants::*,
 };
 
-use crate::traits::Task;
+use crate::traits::{
+    Task,
+    FlagProcessor
+};
 
 /// A creep moves to the next empty object, and refills it.
 pub struct TaskRefill;
@@ -15,6 +18,8 @@ impl TaskRefill {
         TaskRefill{}
     }
 }
+
+impl FlagProcessor for TaskRefill {}
 
 impl Task for TaskRefill {
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {

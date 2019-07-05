@@ -3,15 +3,28 @@ use screeps::{
         MemoryReference,
         root
     },
-    objects::Creep,
+    objects::{
+        Creep,
+        RoomPosition
+    },
     constants::Part
 };
-use std::error::Error;
+
+use std::{
+    error::Error,
+    str::SplitWhitespace
+};
+
+pub trait FlagProcessor {
+    fn flag(&self, _cmd: SplitWhitespace, _pos: RoomPosition) -> Result<bool, Box<dyn Error>> {
+        Ok(false)
+    }
+}
 
 /// Represents a creep's role.
 /// Roles decide which tasks the creep should do in a given tick.
 /// It also has a name, by which the creep can decide what role it has.
-pub trait Role {
+pub trait Role: FlagProcessor {
     fn name(&self) -> &'static str {
         "undefined"
     }
@@ -32,7 +45,7 @@ pub trait Role {
 
 /// Represents a creep's task.
 /// A creep should only execute one task per tick.
-pub trait Task {
+pub trait Task: FlagProcessor {
     /// Returns true if the task was executed.
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>>;
 

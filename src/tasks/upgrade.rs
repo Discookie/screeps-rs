@@ -8,7 +8,10 @@ use screeps::{
     constants::*
 };
 
-use crate::traits::Task;
+use crate::traits::{
+    Task,
+    FlagProcessor
+};
 
 /// A creep moves to its room's controller, and upgrades it.
 pub struct TaskUpgrade;
@@ -18,6 +21,8 @@ impl TaskUpgrade {
         TaskUpgrade{}
     }
 }
+
+impl FlagProcessor for TaskUpgrade {}
 
 impl Task for TaskUpgrade {
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {

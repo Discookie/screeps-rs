@@ -5,7 +5,10 @@ use screeps::{
     constants::*
 };
 
-use crate::traits::Task;
+use crate::traits::{
+    Task,
+    FlagProcessor
+};
 
 /// A creep moves to the closest construction site, and attempts to build it.
 pub struct TaskBuild;
@@ -15,6 +18,8 @@ impl TaskBuild {
         TaskBuild{}
     }
 }
+
+impl FlagProcessor for TaskBuild {}
 
 impl Task for TaskBuild {
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {

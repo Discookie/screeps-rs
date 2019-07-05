@@ -5,7 +5,7 @@ use screeps::{
     memory::MemoryReference,
     constants::Part
 };
-use crate::traits::{Role, Task};
+use crate::traits::{Role, Task, FlagProcessor};
 use crate::tasks::{
     harvest::TaskHarvest,
     refill::TaskRefill,
@@ -38,6 +38,8 @@ impl<'a> Builder<'a> {
         }
     }
 }
+
+impl<'a> FlagProcessor for Builder<'a> {}
 
 impl<'a> Role for Builder<'a> {
     fn name(&self) -> &'static str {

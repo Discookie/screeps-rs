@@ -21,7 +21,10 @@ mod traits;
 use hashbrown::HashMap;
 
 use screeps::{
-    constants::ReturnCode,
+    constants::{
+        Color,
+        ReturnCode
+    },
     prelude::*,
     objects::*,
     game::*,
@@ -30,7 +33,10 @@ use screeps::{
 
 use crate::{
     military::tower::Tower,
-    traits::Role,
+    traits::{
+        Role,
+        FlagProcessor
+    },
     roles::{
         builder::Builder,
         harvester::Harvester,
@@ -46,7 +52,7 @@ use crate::{
 
 fn main() {
     stdweb::initialize();
-    logging::setup_logging(logging::Info);
+    logging::setup_logging(logging::Debug);
 
     js! {
         var game_loop = @{game_loop};
@@ -170,6 +176,60 @@ fn game_loop() {
                     break;
                 }
             }
+        }
+    }
+
+    // Process commands given via flags
+    if let Some(done_flag) = flags::get("done") {
+        let flag_proc_result: Result<(), String> = {
+            let mut errs = Vec::new();
+            
+            for flag in flags::values() {
+                let name = flag.name();
+                let mut cmd = name.split_whitespace();
+
+                let result = {
+                    let module = if let Some(x) = cmd.next() { x } else { continue };
+
+                    if let Some(role) = roles.get(module) {
+                        role.flag(cmd, flag.pos())
+                    } else {
+                        match module {
+                            "ok" => Ok(true),
+                            "err" => Ok(true),
+                            "error" => Err(Box::from( format!("'{}' - intentional error", flag.name()) )),
+                            _ => Ok(false)
+                        }
+                    }
+                };
+
+                match result {
+                    Ok(true) => flag.remove(),
+                    Ok(false) => (),
+                    Err(err) => errs.push(err.to_string())
+                };
+            }
+            
+            match errs.len() {
+                0 => Ok(()),
+                _ => Err( format!("<ul>{}</ul>", errs.iter().fold( String::from("<ul>"), |acc, next|
+                        format!("{acc}<li>{next}</li>", acc=acc, next=next) 
+                    )) )
+            }
+        };
+
+        let flag_pos = done_flag.pos();
+        done_flag.remove();
+
+        match flag_proc_result {
+            Ok(()) => {
+                flag_pos.create_flag("ok", Color::Green, Color::Cyan).ok();
+                info!("processed all flags successfully");
+            },
+            Err(err) => {
+                flag_pos.create_flag("err", Color::Red, Color::Orange).ok();
+                error!("there were errors with flags: {}", err);
+            },
         }
     }
 

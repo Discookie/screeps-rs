@@ -17,7 +17,10 @@ use screeps::{
     prelude::*
 };
 
-use crate::traits::Task;
+use crate::traits::{
+    Task,
+    FlagProcessor
+};
 
 /// A creep moves to its assigned source, and begins harvesting.
 /// 
@@ -86,9 +89,9 @@ impl TaskHarvest {
             4
         }
     }
-
-
 }
+
+impl FlagProcessor for TaskHarvest {}
 
 impl Task for TaskHarvest {
     fn run(&self, creep: &Creep) -> Result<bool, Box<dyn Error>> {
